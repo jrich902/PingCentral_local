@@ -1,0 +1,106 @@
+############################################################
+# Ping Identity
+#
+############################################################
+
+global:
+  ingress:
+    enabled: true
+    addReleaseNameToHost: subdomain
+    defaultDomain: example.com
+    defaultTlsSecret:
+    annotations:
+      nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+
+pingaccess-admin:
+  enabled: true
+  privateCert:
+    generate: true
+  envs:
+    SERVER_PROFILE_URL: https://github.com/pingidentity/pingidentity-server-profiles.git
+    SERVER_PROFILE_PATH: baseline/pingaccess
+  container:
+    waitFor:
+      pingfederate-engine:
+        service: https
+        timeoutSeconds: 300
+
+pingaccess-engine:
+  enabled: true
+  envs:
+    SERVER_PROFILE_URL: https://github.com/pingidentity/pingidentity-server-profiles.git
+    SERVER_PROFILE_PATH: baseline/pingaccess
+
+pingdataconsole:
+  enabled: false
+
+pingdatagovernance:
+  enabled: false
+
+pingdirectory:
+  enabled: true
+  envs:
+    SERVER_PROFILE_URL: https://github.com/pingidentity/pingidentity-server-profiles.git
+    SERVER_PROFILE_PATH: baseline/pingdirectory
+  image:
+    repository: pingidentity
+    tag: 2101
+    pullPolicy: Always
+  services:
+    ldap:
+      servicePort: 389
+      containerPort: 389
+    ldaps:
+      servicePort: 636
+      containerPort: 636
+    https:
+      servicePort: 443
+      containerPort: 443
+      ingressPort: 443
+
+
+pingfederate-admin:
+  enabled: true
+  container:
+    waitFor:
+      pingdirectory:
+        service: ldaps
+  envs:
+    SERVER_PROFILE_URL: https://github.com/pingidentity/pingidentity-server-profiles.git
+    SERVER_PROFILE_PATH: baseline/pingfederate
+    CLUSTER_BIND_ADDRESS: NON_LOOPBACK
+    CLUSTER_NAME: K8S_PF_CLUSTER
+    DNS_QUERY_LOCATION: "pingcentral-pingfederate-cluster.default.svc.cluster.local,pingfederate-admin.pingdevops2.example.com"
+    DNS_RECORD_TYPE: A
+    OPERATIONAL_MODE: CLUSTERED_CONSOLE
+    PING_IDENTITY_ACCEPT_EULA: "YES"    
+
+pingfederate-engine:
+  enabled: true
+  envs:
+    SERVER_PROFILE_URL: https://github.com/pingidentity/pingidentity-server-profiles.git
+    SERVER_PROFILE_PATH: baseline/pingfederate
+    CLUSTER_BIND_ADDRESS: NON_LOOPBACK
+    CLUSTER_NAME: K8S_PF_CLUSTER
+    DNS_QUERY_LOCATION: "pingfederate-cluster.pingdevops2.example.com,pingcentral-pingfederate-cluster.default.svc.cluster.local"
+    DNS_RECORD_TYPE: A
+    OPERATIONAL_MODE: CLUSTERED_ENGINE
+    PING_IDENTITY_ACCEPT_EULA: "YES"
+    DISCOVERY_INITIAL_HOST: ""
+    PF_ENGINE_DEBUG: "true"
+    PING_DEBUG: "true"
+  # service:
+  #     cluster:
+  #     servicePort: 7600
+  #     containerPort: 7600
+  #     ingressPort: 443
+  # ingress:
+  #     hosts:
+  #       - host: pingfederate-cluster._defaultDomain_
+  #         paths:
+  #         - path: /
+  #           backend:
+  #             serviceName: cluster
+  #     tls:
+  #       - secretName: _defaultTlsSecret_
+  #         hosts:
