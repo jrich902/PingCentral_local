@@ -34,24 +34,28 @@ Run Make init to set up Helm and Minikube.
 make init
 ```
 
-After the make init is competed, it will have downloaded the latest version of the values.yaml from the PingDevops Helm Repo. It will save the file as `ping-devops-values.yaml` You are now able to open this file with your editor of choice and make the changes required. Please note that the default values file does NOT deploy any of the products, You will have to modify this to have it deploy the products you require.
+This repo included a reconfigured ping-devops-values.yaml. If you need to make changes in the ping-devops-values.yaml file, if you need to make changes, have a look at the default values file from the helm repo at this link 
 
-In the ping-devops-values.yaml file, look for lines of code _like_ the following for each one of our products you would like to deploy.
-```yaml
-#############################################################
-# pingfederate-admin values
-#############################################################
-pingfederate-admin:
-  enabled: false
-  name: pingfederate-admin
-  image:
-    name: pingfederate
-```
-change the value of `enabled` to `true` on each of the products you need to deploy with the helm chart. Then save the file. 
+https://github.com/pingidentity/helm-charts/blob/master/charts/ping-devops/values.yaml
 
 After this is done you can use make to apply the changes to the minikube cluster
+
 ```
 make apply
+```
+
+Run `make ip` to get the Ip address of the Kubernetes cluster, then open gasmask add the following in a new file
+
+```bash
+127.0.0.1		localhost
+255.255.255.255	broadcasthost
+::1				localhost
+fe80::1%lo0		localhost
+{IP from make ip}		  pingfederate-admin.pingcentral.example.com
+{IP from make ip}			pingfederate-engine.pingcentral.example.com
+{IP from make ip}			pingdirectory.pingcentral.example.com
+{IP from make ip}			pingaccess-engine.pingcentral.example.com
+{IP from make ip}			pingaccess-admin.pingcentral.example.com
 ```
 
 When the apply is completed you should be able to run `kubectl` or use `k9s` to explore the cluster and ensure the products pods are deployed and starting.
